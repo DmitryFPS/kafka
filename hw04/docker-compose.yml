@@ -1,0 +1,113 @@
+services:
+  zoo1:
+    image: zookeeper:latest
+    container_name: zoo1
+    hostname: zoo1
+    environment:
+      ZOO_MY_ID: 1
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+
+  zoo2:
+    image: zookeeper:latest
+    container_name: zoo2
+    hostname: zoo2
+    environment:
+      ZOO_MY_ID: 2
+      ZOOKEEPER_CLIENT_PORT: 2182
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2182:2182"
+
+  zoo3:
+    image: zookeeper:latest
+    container_name: zoo3
+    hostname: zoo3
+    environment:
+      ZOO_MY_ID: 3
+      ZOOKEEPER_CLIENT_PORT: 2183
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2183:2183"
+
+  kafka1:
+    image: confluentinc/cp-kafka:7.0.9
+    container_name: kafka1
+    depends_on:
+      - zoo1
+      - zoo2
+      - zoo3
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zoo1:2181,zoo2:2182,zoo3:2183/kafka
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,HOST:PLAINTEXT,HOST_PRODUCER:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka1:9191,HOST://localhost:9091,HOST_PRODUCER://localhost:9081
+      #BOOTSTRAP_SERVERS: kafka1:9191,kafka2:9192,kafka3:9193
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 3
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 5000
+    ports:
+      - "9191:9191"
+      - "9091:9091"
+      - "9081:9081"
+
+  kafka2:
+    image: confluentinc/cp-kafka:7.0.9
+    container_name: kafka2
+    depends_on:
+      - zoo1
+      - zoo2
+      - zoo3
+    environment:
+      KAFKA_BROKER_ID: 2
+      KAFKA_ZOOKEEPER_CONNECT: zoo1:2181,zoo2:2182,zoo3:2183/kafka
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,HOST:PLAINTEXT,HOST_PRODUCER:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka2:9192,HOST://localhost:9092,HOST_PRODUCER://localhost:9082
+      #BOOTSTRAP_SERVERS: kafka1:9191,kafka2:9192,kafka3:9193
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 3
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 5000
+    ports:
+      - "9192:9192"
+      - "9092:9092"
+      - "9082:9082"
+
+  kafka3:
+    image: confluentinc/cp-kafka:7.0.9
+    container_name: kafka3
+    depends_on:
+      - zoo1
+      - zoo2
+      - zoo3
+    environment:
+      KAFKA_BROKER_ID: 3
+      KAFKA_ZOOKEEPER_CONNECT: zoo1:2181,zoo2:2182,zoo3:2183/kafka
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,HOST:PLAINTEXT,HOST_PRODUCER:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka3:9193,HOST://localhost:9093,HOST_PRODUCER://localhost:9083
+      #BOOTSTRAP_SERVERS: kafka1:9191,kafka2:9192,kafka3:9193
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 3
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 5000
+    ports:
+      - "9193:9193"
+      - "9093:9093"
+      - "9083:9083"
+
+  kafdrop:
+    image: obsidiandynamics/kafdrop:latest
+    container_name: kafdrop
+    restart: "no"
+    ports:
+      - "9000:9000"
+    environment:
+      KAFKA_BROKERCONNECT: kafka1:9191,kafka2:9192,kafka3:9193
+      JVM_OPTS: "-Xms16M -Xmx48M -Xss450K -XX:+UseStringDeduplication -XX:+TieredCompilation"
+    depends_on:
+      - kafka1
+      - kafka2
+      - kafka3
